@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Ambiental - Arboretum Lussich</title>
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <header>
+            <div class="header-glow"></div>
+            <h1>Arboretum Lussich</h1>
+            <p class="subtitle">Monitoreo Automático - Datos en Tiempo Real (Cada 10 seg)</p>
+        </header>
+
+        <div class="cards-grid">
+            
+            <div class="card card-temp">
+                <div class="card-header">
+                    <h2>Temperatura</h2>
+                    <div class="current-value" id="temp-val">--.- °C</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartTemperatura"></canvas>
+                </div>
+            </div>
+
+            <div class="card card-suelo">
+                <div class="card-header">
+                    <h2>Humedad del Suelo</h2>
+                    <div class="current-value" id="suelo-val">--%</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartSuelo"></canvas>
+                </div>
+            </div>
+
+            <div class="card card-ambiente">
+                <div class="card-header">
+                    <h2>Humedad del Ambiente</h2>
+                    <div class="current-value" id="ambiente-val">--%</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartAmbiente"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            databaseURL: "https://proyecto-arduino-11833-default-rtdb.firebaseio.com/"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let historialDatos = [];
+        let graficaTemp = null;
+        let graficaSuelo = null;
+        let graficaAmbiente = null;
+
+        // Opciones comunes de Chart.js adaptadas al tema Eco-Tech
+        const opcionesComunes = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { 
+                    grid: { color: 'rgba(74, 222, 128, 0.05)' }, 
+                    ticks: { color: '#8ca89a', maxRotation: 0, autoSkip: true, maxTicksLimit: 5, font: {family: 'Fira Code'} } 
+                },
+                y: { 
+                    grid: { color: 'rgba(74, 222, 128, 0.05)' }, 
+                    ticks: { color: '#8ca89a', font: {family: 'Fira Code'} } 
+                }
+            }
+        };
+
+        function actualizarDashboardConDatosDeMemoria(nuevosDatos) {
+            if (!nuevosDatos || nuevosDatos.length === 0) return;
+
+            const etiquetasHoras = nuevosDatos.map(dato => dato.hora);
+            const datosTemperatura = nuevosDatos.map(dato => dato.temperatura);
+            const datosHumedadSuelo = nuevosDatos.map(dato => dato.humSuelo);
+            const datosHumedadAmbiente = nuevosDatos.map(dato => dato.humAmbiente);
+
+            const ultimoDato = nuevosDatos[nuevosDatos.length - 1];
+            
+            document.getElementById("temp-val").innerText = `${Number(ultimoDato.temperatura).toFixed(1)} °C`;
+            document.getElementById("suelo-val").innerText = `${ultimoDato.humSuelo}%`;
+            document.getElementById("ambiente-val").innerText = `${ultimoDato.humAmbiente}%`;
+
+            if (graficaTemp) graficaTemp.destroy();
+            if (graficaSuelo) graficaSuelo.destroy();
+            if (graficaAmbiente) graficaAmbiente.destroy();
+
+            // --- Gráfica 1: Temperatura (Ámbar) ---
+            const ctxTemp = document.getElementById('chartTemperatura').getContext('2d');
+            graficaTemp = new Chart(ctxTemp, {
+                type: 'line',
+                data: {
+                    labels: etiquetasHoras,
+                    datasets: [{ data: datosTemperatura, borderColor: '#ffb347', backgroundColor: 'rgba(255, 179, 71, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#ffb347' }]
+                },
+                options: {
+                    ...opcionesComunes,
+                    scales: { ...opcionesComunes.scales, y: { min: 10, max: 50, grid: { color: 'rgba(74, 222, 128, 0.05)' }, ticks: { color: '#8ca89a' } } },
+                    plugins: {
+                        annotation: {
+                            annotations: {
+                                zonaIntermedia: { type: 'box', yMin: 30, yMax: 36, backgroundColor: 'rgba(255, 179, 71, 0.05)', borderWidth: 0 },
+                                zonaAlta: { type: 'box', yMin: 36, yMax: 50, backgroundColor: 'rgba(255, 87, 34, 0.05)', borderWidth: 0 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- Gráfica 2: Humedad del Suelo (Verde Neón/Naturaleza) ---
+            const ctxSuelo = document.getElementById('chartSuelo').getContext('2d');
+            graficaSuelo = new Chart(ctxSuelo, {
+                type: 'line',
+                data: {
+                    labels: etiquetasHoras,
+                    datasets: [{ data: datosHumedadSuelo, borderColor: '#4ade80', backgroundColor: 'rgba(74, 222, 128, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#4ade80' }]
+                },
+                options: {
+                    ...opcionesComunes,
+                    scales: { ...opcionesComunes.scales, y: { min: 0, max: 100, grid: { color: 'rgba(74, 222, 128, 0.05)' }, ticks: { color: '#8ca89a' } } }
+                }
+            });
+
+            // --- Gráfica 3: Humedad del Ambiente (Cian Tecnológico) ---
+            const ctxAmbiente = document.getElementById('chartAmbiente').getContext('2d');
+            graficaAmbiente = new Chart(ctxAmbiente, {
+                type: 'line',
+                data: {
+                    labels: etiquetasHoras,
+                    datasets: [{ data: datosHumedadAmbiente, borderColor: '#00e5ff', backgroundColor: 'rgba(0, 229, 255, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#00e5ff' }]
+                },
+                options: {
+                    ...opcionesComunes,
+                    scales: { ...opcionesComunes.scales, y: { min: 0, max: 100, grid: { color: 'rgba(74, 222, 128, 0.05)' }, ticks: { color: '#8ca89a' } } }
+                }
+            });
+        }
+
+        database.ref('/').on('value', (snapshot) => {
+            const datosFirebase = snapshot.val();
+            
+            if (datosFirebase) {
+                const horaActual = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+                const origen = datosFirebase.sensores ? datosFirebase.sensores : datosFirebase;
+                
+                const tempSegura = (origen.temperatura !== undefined) ? origen.temperatura : 0;
+                const ambSeguro = (origen.humAmbiente !== undefined) ? origen.humAmbiente : 0;
+                const sueloSeguro = (origen.humSuelo !== undefined) ? origen.humSuelo : 0;
+
+                const nuevoRegistro = {
+                    hora: horaActual,
+                    temperatura: Number(tempSegura),
+                    humAmbiente: Number(ambSeguro),
+                    humSuelo: Number(sueloSeguro)
+                };
+
+                historialDatos.push(nuevoRegistro);
+
+                if (historialDatos.length > 8) {
+                    historialDatos.shift();
+                }
+
+                actualizarDashboardConDatosDeMemoria(historialDatos);
+            }
+        }, (error) => {
+            console.log("Error de lectura en Firebase:", error);
+        });
+    </script>
+</body>
+</html>

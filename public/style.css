@@ -1,0 +1,291 @@
+/* ====================================================================
+   🌿🤖 TEMA ECO-TECH: Naturaleza + Tecnología
+   ==================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+    --bg-deep: #030a06; 
+    --bg-card: rgba(9, 25, 17, 0.6); 
+    --border-card: rgba(74, 222, 128, 0.15); 
+    --text-main: #e2f0e9;
+    --text-muted: #8ca89a;
+    
+    --color-temp: #ffb347;   
+    --color-suelo: #4ade80;  
+    --color-ambiente: #00e5ff; 
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+body {
+    background: radial-gradient(circle at top center, #0a2116 0%, var(--bg-deep) 100%);
+    color: var(--text-main);
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.dashboard-container {
+    width: 100%;
+    max-width: 1100px;
+    position: relative;
+}
+
+/* --- CABECERA --- */
+header {
+    text-align: center;
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.header-glow {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 100px;
+    background: rgba(74, 222, 128, 0.15);
+    filter: blur(60px);
+    z-index: -1;
+}
+
+header h1 {
+    font-size: 2.8rem;
+    font-weight: 600;
+    letter-spacing: -1px;
+    background: linear-gradient(90deg, #4ade80, #00e5ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+    text-shadow: 0 0 30px rgba(74, 222, 128, 0.2);
+}
+
+header .subtitle {
+    font-family: 'Fira Code', monospace;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* --- GRID Y TARJETAS --- */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 25px;
+}
+
+.card {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-card);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer; /* Indica que es clickeable */
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(74, 222, 128, 0.4);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(74, 222, 128, 0.1);
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+}
+
+.card-temp::before { background: var(--color-temp); }
+.card-suelo::before { background: var(--color-suelo); }
+.card-ambiente::before { background: var(--color-ambiente); }
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.card-header h2 {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.current-value {
+    font-family: 'Fira Code', monospace;
+    font-size: 1.8rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+}
+
+.card-temp .current-value { 
+    color: var(--color-temp); 
+    text-shadow: 0 0 15px rgba(255, 179, 71, 0.4);
+    border: 1px solid rgba(255, 179, 71, 0.2);
+}
+
+.card-suelo .current-value { 
+    color: var(--color-suelo); 
+    text-shadow: 0 0 15px rgba(74, 222, 128, 0.4);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+.card-ambiente .current-value { 
+    color: var(--color-ambiente); 
+    text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+}
+
+.chart-container {
+    position: relative;
+    height: 200px;
+    width: 100%;
+    margin-top: auto;
+}
+
+/* ====================================================================
+   🤖 ESTILOS AGREGADOS: MODAL DE VISTA EXTENDIDA
+   ==================================================================== */
+.modal {
+    display: none; 
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(2, 6, 4, 0.85); /* Fondo oscuro profundo */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: rgba(9, 25, 17, 0.95);
+    border: 1px solid rgba(74, 222, 128, 0.25);
+    border-radius: 20px;
+    max-width: 950px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 35px;
+    position: relative;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(74, 222, 128, 0.08);
+}
+
+.close-btn {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    font-size: 2.2rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.close-btn:hover {
+    color: #ff5722;
+}
+
+.subtitle-modal {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-top: 4px;
+}
+
+.modal-body {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 35px;
+}
+
+.chart-container-modal {
+    position: relative;
+    height: 320px;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 14px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* --- TABLA DE DATOS EXTENDIDA --- */
+.tabla-detalle-container {
+    width: 100%;
+    max-height: 280px;
+    overflow-y: auto;
+    border-radius: 12px;
+    border: 1px solid rgba(74, 222, 128, 0.15);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.tabla-detalle {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.tabla-detalle th, .tabla-detalle td {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(74, 222, 128, 0.06);
+}
+
+.tabla-detalle th {
+    background: #06120c;
+    color: var(--text-main);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.8px;
+}
+
+.tabla-detalle tbody tr:hover {
+    background: rgba(74, 222, 128, 0.04);
+}
+
+/* Clases de utilidad */
+.code-font {
+    font-family: 'Fira Code', monospace;
+}
+.font-bold {
+    font-weight: 700;
+}
+
+.badge-sensor {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    border: 1px solid;
+}
