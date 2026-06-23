@@ -1,18 +1,17 @@
 /* ====================================================================
-   🌿🤖 TEMA ECO-TECH: Naturaleza + Tecnología
+   🌿🤖 TEMA ECO-TECH V2: Naturaleza + Tecnología
    ==================================================================== */
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;700&family=Inter:wght@400;500;600&display=swap');
 
 :root {
-    --bg-deep: #030a06; 
-    --bg-card: rgba(9, 25, 17, 0.6); 
-    --border-card: rgba(74, 222, 128, 0.15); 
-    --text-main: #e2f0e9;
-    --text-muted: #8ca89a;
+    --bg-deep: #050b08; /* Verde noche profundísimo */
+    --bg-card: rgba(12, 28, 20, 0.5); /* Translúcido orgánico */
+    --border-card: rgba(34, 197, 94, 0.15); 
+    --text-main: #f0fdf4; /* Blanco con un pequeñísimo tinte verde */
+    --text-muted: #6b8e7c;
     
-    --color-temp: #ffb347;   
-    --color-suelo: #4ade80;  
-    --color-ambiente: #00e5ff; 
+    --color-temp: #ff9e5e;   
+    --color-suelo: #22c55e;  
+    --color-ambiente: #06b6d4; 
 }
 
 * {
@@ -23,86 +22,112 @@
 }
 
 body {
-    background: radial-gradient(circle at top center, #0a2116 0%, var(--bg-deep) 100%);
+    background-color: var(--bg-deep);
     color: var(--text-main);
     padding: 40px 20px;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Luces de fondo (Bioluminiscencia) */
+.ambient-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    z-index: -1;
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.glow-1 {
+    width: 500px;
+    height: 500px;
+    background: rgba(34, 197, 94, 0.15);
+    top: -150px;
+    left: -100px;
+}
+
+.glow-2 {
+    width: 600px;
+    height: 600px;
+    background: rgba(6, 182, 212, 0.1);
+    bottom: -200px;
+    right: -150px;
 }
 
 .dashboard-container {
     width: 100%;
-    max-width: 1100px;
-    position: relative;
+    max-width: 1150px;
+    z-index: 1;
 }
 
 /* --- CABECERA --- */
 header {
     text-align: center;
-    margin-bottom: 40px;
-    position: relative;
-}
-
-.header-glow {
-    position: absolute;
-    top: -50px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 300px;
-    height: 100px;
-    background: rgba(74, 222, 128, 0.15);
-    filter: blur(60px);
-    z-index: -1;
+    margin-bottom: 50px;
 }
 
 header h1 {
-    font-size: 2.8rem;
-    font-weight: 600;
-    letter-spacing: -1px;
-    background: linear-gradient(90deg, #4ade80, #00e5ff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
-    text-shadow: 0 0 30px rgba(74, 222, 128, 0.2);
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: -1.5px;
+    color: var(--text-main);
+    margin-bottom: 12px;
 }
 
 header .subtitle {
-    font-family: 'Fira Code', monospace;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'Inter', sans-serif;
+    color: var(--color-suelo);
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    background: rgba(34, 197, 94, 0.1);
+    padding: 8px 16px;
+    border-radius: 20px;
+    width: fit-content;
+    margin: 0 auto;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.icon-small {
+    font-size: 1.2rem;
 }
 
 /* --- GRID Y TARJETAS --- */
 .cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 28px;
 }
 
 .card {
     background: var(--bg-card);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-card);
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    transition: all 0.3s ease;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex;
     flex-direction: column;
+    cursor: pointer;
     position: relative;
     overflow: hidden;
-    cursor: pointer; /* Indica que es clickeable */
 }
 
 .card:hover {
-    transform: translateY(-5px);
-    border-color: rgba(74, 222, 128, 0.4);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(74, 222, 128, 0.1);
+    transform: translateY(-8px);
+    background: rgba(18, 40, 28, 0.7);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .card::before {
@@ -111,181 +136,188 @@ header .subtitle {
     top: 0;
     left: 0;
     width: 100%;
-    height: 3px;
+    height: 4px;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
 }
 
-.card-temp::before { background: var(--color-temp); }
-.card-suelo::before { background: var(--color-suelo); }
-.card-ambiente::before { background: var(--color-ambiente); }
+.card-temp::before { background: linear-gradient(90deg, transparent, var(--color-temp), transparent); }
+.card-suelo::before { background: linear-gradient(90deg, transparent, var(--color-suelo), transparent); }
+.card-ambiente::before { background: linear-gradient(90deg, transparent, var(--color-ambiente), transparent); }
+
+.card:hover::before { opacity: 1; }
 
 .card-header {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+}
+
+.header-title {
+    display: flex;
     align-items: center;
-    margin-bottom: 25px;
+    gap: 10px;
+}
+
+.header-title .material-symbols-rounded {
+    color: var(--text-muted);
+    font-size: 1.4rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px;
+    border-radius: 8px;
 }
 
 .card-header h2 {
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--text-muted);
     font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .current-value {
     font-family: 'Fira Code', monospace;
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     font-weight: 700;
-    padding: 6px 14px;
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.4);
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
 }
 
-.card-temp .current-value { 
-    color: var(--color-temp); 
-    text-shadow: 0 0 15px rgba(255, 179, 71, 0.4);
-    border: 1px solid rgba(255, 179, 71, 0.2);
-}
-
-.card-suelo .current-value { 
-    color: var(--color-suelo); 
-    text-shadow: 0 0 15px rgba(74, 222, 128, 0.4);
-    border: 1px solid rgba(74, 222, 128, 0.2);
-}
-
-.card-ambiente .current-value { 
-    color: var(--color-ambiente); 
-    text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
-    border: 1px solid rgba(0, 229, 255, 0.2);
-}
+.card-temp .current-value { color: var(--color-temp); }
+.card-suelo .current-value { color: var(--color-suelo); }
+.card-ambiente .current-value { color: var(--color-ambiente); }
 
 .chart-container {
     position: relative;
-    height: 200px;
+    height: 180px;
     width: 100%;
     margin-top: auto;
 }
 
-/* ====================================================================
-   🤖 ESTILOS AGREGADOS: MODAL DE VISTA EXTENDIDA
-   ==================================================================== */
+/* --- MODAL EXTENDIDO --- */
 .modal {
     display: none; 
+    opacity: 0;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(2, 6, 4, 0.85); /* Fondo oscuro profundo */
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: rgba(2, 6, 4, 0.85); 
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     z-index: 100;
     justify-content: center;
     align-items: center;
     padding: 20px;
+    transition: opacity 0.3s ease;
 }
 
 .modal-content {
-    background: rgba(9, 25, 17, 0.95);
-    border: 1px solid rgba(74, 222, 128, 0.25);
-    border-radius: 20px;
-    max-width: 950px;
+    background: rgba(10, 24, 16, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    max-width: 900px;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
-    padding: 35px;
+    padding: 40px;
     position: relative;
-    box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(74, 222, 128, 0.08);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.8);
 }
 
 .close-btn {
     position: absolute;
-    top: 20px;
-    right: 25px;
-    font-size: 2.2rem;
+    top: 25px;
+    right: 30px;
+    font-size: 2rem;
     color: var(--text-muted);
     cursor: pointer;
     transition: color 0.2s ease;
+    line-height: 1;
 }
 
 .close-btn:hover {
-    color: #ff5722;
+    color: var(--text-main);
+}
+
+.modal-header-text h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 6px;
 }
 
 .subtitle-modal {
     color: var(--text-muted);
     font-size: 0.95rem;
-    margin-top: 4px;
 }
 
 .modal-body {
     margin-top: 30px;
     display: flex;
     flex-direction: column;
-    gap: 35px;
+    gap: 30px;
 }
 
 .chart-container-modal {
     position: relative;
-    height: 320px;
+    height: 300px;
     width: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 14px;
-    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 16px;
+    padding: 20px;
     border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 /* --- TABLA DE DATOS EXTENDIDA --- */
 .tabla-detalle-container {
     width: 100%;
-    max-height: 280px;
+    max-height: 250px;
     overflow-y: auto;
     border-radius: 12px;
-    border: 1px solid rgba(74, 222, 128, 0.15);
-    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .tabla-detalle {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 .tabla-detalle th, .tabla-detalle td {
-    padding: 14px 18px;
-    border-bottom: 1px solid rgba(74, 222, 128, 0.06);
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .tabla-detalle th {
-    background: #06120c;
-    color: var(--text-main);
-    font-weight: 600;
+    background: rgba(5, 12, 8, 0.95);
+    color: var(--text-muted);
+    font-weight: 500;
     position: sticky;
     top: 0;
     z-index: 2;
     text-transform: uppercase;
     font-size: 0.75rem;
-    letter-spacing: 0.8px;
+    letter-spacing: 1px;
 }
 
 .tabla-detalle tbody tr:hover {
-    background: rgba(74, 222, 128, 0.04);
+    background: rgba(255, 255, 255, 0.02);
 }
 
-/* Clases de utilidad */
-.code-font {
-    font-family: 'Fira Code', monospace;
-}
-.font-bold {
-    font-weight: 700;
-}
+/* Utilidades */
+.code-font { font-family: 'Fira Code', monospace; }
+.font-bold { font-weight: 700; }
 
 .badge-sensor {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.85rem;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
     border: 1px solid;
 }
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
