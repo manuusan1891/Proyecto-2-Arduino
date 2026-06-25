@@ -112,14 +112,16 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        let historialDatos = [];
         let historialCompleto = [];
-        
+        let historialDatos = [];
         let graficaTemp = null;
         let graficaSuelo = null;
         let graficaAmbiente = null;
         let graficaModal = null;
         let sensorActualModal = null;
+
+        // Variable de control para evitar duplicaciones rápidas en la red
+        let ultimaInsercionTiempo = 0;
 
         const opcionesComunes = {
             responsive: true,
@@ -154,7 +156,7 @@
                 type: 'line',
                 data: {
                     labels: etiquetasHoras,
-                    datasets: [{ data: datosTemperatura, borderColor: '#ff9e5e', backgroundColor: 'rgba(255, 158, 94, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 }]
+                    datasets: [{ data: datosTemperatura, borderColor: '#ff9e5e', backgroundColor: 'rgba(255, 158, 94, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 2, pointHoverRadius: 4 }]
                 },
                 options: { ...opcionesComunes, scales: { ...opcionesComunes.scales, y: { min: 10, max: 50, grid: { color: 'rgba(255, 255, 255, 0.03)' }, ticks: { color: '#6b8e7c' } } } }
             });
@@ -164,7 +166,7 @@
                 type: 'line',
                 data: {
                     labels: etiquetasHoras,
-                    datasets: [{ data: datosHumedadSuelo, borderColor: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 }]
+                    datasets: [{ data: datosHumedadSuelo, borderColor: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 2, pointHoverRadius: 4 }]
                 },
                 options: { ...opcionesComunes, scales: { ...opcionesComunes.scales, y: { min: 0, max: 100, grid: { color: 'rgba(255, 255, 255, 0.03)' }, ticks: { color: '#6b8e7c' } } } }
             });
@@ -174,7 +176,7 @@
                 type: 'line',
                 data: {
                     labels: etiquetasHoras,
-                    datasets: [{ data: datosHumedadAmbiente, borderColor: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 }]
+                    datasets: [{ data: datosHumedadAmbiente, borderColor: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 2, pointHoverRadius: 4 }]
                 },
                 options: { ...opcionesComunes, scales: { ...opcionesComunes.scales, y: { min: 0, max: 100, grid: { color: 'rgba(255, 255, 255, 0.03)' }, ticks: { color: '#6b8e7c' } } } }
             });
@@ -224,7 +226,7 @@
                 type: 'line',
                 data: {
                     labels: etiquetasHoras,
-                    datasets: [{ data: datosSensor, borderColor: colorLinea, backgroundColor: colorLinea + '1A', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 2, pointBackgroundColor: colorLinea }]
+                    datasets: [{ data: datosSensor, borderColor: colorLinea, backgroundColor: colorLinea + '1A', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: colorLinea }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6b8e7c', font: {family: 'Fira Code'} } }, y: { min: yMin, max: yMax, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6b8e7c', font: {family: 'Fira Code'} } } } }
             });
@@ -238,26 +240,62 @@
             }
         }
 
+        // 1. ESCUCHA DE DATOS EN TIEMPO REAL (Monitorea las variables que pisa el script de tu PC)
         database.ref('/').on('value', (snapshot) => {
             const datosFirebase = snapshot.val();
             if (datosFirebase) {
-                historialCompleto = [];
-                Object.keys(datosFirebase).forEach(key => {
-                    const r = datosFirebase[key];
-                    if (r && (r.temperatura !== undefined || r.humSuelo !== undefined)) {
-                        let et = r.timestamp ? new Date(r.timestamp).toLocaleDateString([], {day: '2-digit', month: '2-digit'}) + " " + new Date(r.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : new Date().toLocaleDateString([], {day: '2-digit', month: '2-digit'});
-                        historialCompleto.push({ hora: et, temperatura: Number(r.temperatura||0), humAmbiente: Number(r.humAmbiente||0), humSuelo: Number(r.humSuelo||0) });
+                const origen = datosFirebase.sensores ? datosFirebase.sensores : datosFirebase;
+                
+                if (origen.temperatura !== undefined && origen.humSuelo !== undefined) {
+                    let ahora = new Date();
+                    let tiempoActual = ahora.getTime();
+                    let et = ahora.toLocaleDateString([], {day: '2-digit', month: '2-digit'}) + " " + ahora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    // Candado: Solo permite insertar un registro en la nube cada 30 segundos para evitar bucles repetitivos
+                    if (tiempoActual - ultimaInsercionTiempo > 30000) {
+                        
+                        // Consultamos el último dato físico subido al historial remoto para estar 100% seguros de que cambió
+                        database.ref('/historial').limitToLast(1).once('value', (histSnapshot) => {
+                            let esDuplicado = false;
+                            histSnapshot.forEach(child => {
+                                const ultimoEnNube = child.val();
+                                if (ultimoEnNube.temperatura === Number(origen.temperatura) && ultimoEnNube.humSuelo === Number(origen.humSuelo)) {
+                                    esDuplicado = true;
+                                }
+                            });
+
+                            if (!esDuplicado) {
+                                ultimaInsercionTiempo = tiempoActual;
+                                // Inserción persistente en la nube: Crea la lista ordenada en Firebase Realtime Database
+                                database.ref('/historial').push({
+                                    hora: et,
+                                    temperatura: Number(origen.temperatura || 0),
+                                    humAmbiente: Number(origen.humAmbiente || 0),
+                                    humSuelo: Number(origen.humSuelo || 0)
+                                });
+                            }
+                        });
                     }
-                });
-                if (historialCompleto.length === 0 && (datosFirebase.temperatura !== undefined || datosFirebase.sensores)) {
-                    const origen = datosFirebase.sensores ? datosFirebase.sensores : datosFirebase;
-                    historialCompleto.push({ hora: `${new Date().toLocaleDateString([], {day: '2-digit', month: '2-digit'})} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`, temperatura: Number(origen.temperatura||0), humAmbiente: Number(origen.humAmbiente||0), humSuelo: Number(origen.humSuelo||0) });
                 }
+            }
+        });
+
+        // 2. ESCUCHA EXCLUSIVA DEL NODO /HISTORIAL (Sustenta los gráficos para cualquier usuario conectado en la web)
+        database.ref('/historial').on('value', (snapshot) => {
+            const datosHistorial = snapshot.val();
+            if (datosHistorial) {
+                historialCompleto = [];
+                Object.keys(datosHistorial).forEach(key => {
+                    historialCompleto.push(datosHistorial[key]);
+                });
+
+                // Extraemos las últimas 8 mediciones para el renderizado del dashboard principal
                 historialDatos = [...historialCompleto].slice(-8);
                 actualizarDashboardConDatosDeMemoria(historialDatos);
+                
                 if (sensorActualModal) actualizarModal();
             }
-        }, (error) => console.log("Error Firebase:", error));
+        }, (error) => console.error("Error al leer el historial remoto:", error));
     </script>
 </body>
 </html>

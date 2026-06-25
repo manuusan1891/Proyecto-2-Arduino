@@ -46,24 +46,27 @@ void setup() {
     return; 
   }
 
-  // 3. LÓGICA DEL SEMÁFORO
-  if (t < 30.0) {
+  // 3. LÓGICA DEL SEMÁFORO 
+  // Verde: t < 25 e hAmb > 60% e hSuelo > 30%
+  if (t < 25.0 && hAmb > 60.0 && hSuelo > 30) {
     digitalWrite(LED_VERDE, HIGH); 
     digitalWrite(LED_AMARILLO, LOW); 
     digitalWrite(LED_ROJO, LOW);
   } 
-  else if (t >= 30.0 && t < 36.0) {
-    digitalWrite(LED_VERDE, LOW); 
-    digitalWrite(LED_AMARILLO, HIGH); 
-    digitalWrite(LED_ROJO, LOW);
-  } 
-  else {
+  // Rojo: t > 32 e hAmb < 40% e hSuelo < 15%
+  else if (t > 32.0 && hAmb < 40.0 && hSuelo < 15) {
     digitalWrite(LED_VERDE, LOW); 
     digitalWrite(LED_AMARILLO, LOW); 
     digitalWrite(LED_ROJO, HIGH);
+  } 
+  // Amarillo: Cualquier otra combinación intermedia o de precaución
+  else {
+    digitalWrite(LED_VERDE, LOW); 
+    digitalWrite(LED_AMARILLO, HIGH); 
+    digitalWrite(LED_ROJO, LOW);
   }
 
-  // 4. ENVÍO DE DATOS JSON (Única vez)
+  // 4. ENVÍO DE DATOS JSON (Única vez - Intacto para el Dashboard)
   Serial.print("{");
   Serial.print("\"temperatura\":"); Serial.print(t, 1); Serial.print(",");
   Serial.print("\"humAmbiente\":"); Serial.print((int)hAmb); Serial.print(",");
