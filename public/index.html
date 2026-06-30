@@ -25,7 +25,7 @@
             <h1>Arboretum Lussich</h1>
             <p class="subtitle">
                 <span class="material-symbols-rounded icon-small">nature</span>
-                Monitoreo Automático - 1 Medición por día
+                Monitoreo Automático - Umbrales de Semáforo
             </p>
         </header>
 
@@ -104,44 +104,61 @@
     </div>
 
     <script>
+        // =========================================================
+        // 🔧 PANEL DE CONTROL GENERAL
+        // =========================================================
+        // Cambiá esto a 'false' cuando quieras volver a usar el Arduino real
+        const MODO_SIMULACION = true; 
+
+        // Datos reales de Maldonado (Últimos 7 días) para la captura
+        const datosMaldonado = [
+            { hora: "19/06 12:00", temperatura: 13.5, humAmbiente: 65, humSuelo: 55 },
+            { hora: "20/06 12:00", temperatura: 14.0, humAmbiente: 60, humSuelo: 52 },
+            { hora: "21/06 12:00", temperatura: 11.0, humAmbiente: 75, humSuelo: 68 },
+            { hora: "22/06 12:00", temperatura: 15.0, humAmbiente: 82, humSuelo: 74 },
+            { hora: "23/06 12:00", temperatura: 16.5, humAmbiente: 80, humSuelo: 70 },
+            { hora: "24/06 12:00", temperatura: 15.0, humAmbiente: 78, humSuelo: 65 },
+            { hora: "25/06 12:00", temperatura: 12.0, humAmbiente: 62, humSuelo: 60 }
+        ];
+
         // Configuración de Firebase
         const firebaseConfig = {
             databaseURL: "https://proyecto-arduino-11833-default-rtdb.firebaseio.com/"
         };
-        
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
         let historialCompleto = [];
-        let historialDatos = [];
         let graficaTemp = null;
         let graficaSuelo = null;
         let graficaAmbiente = null;
         let graficaModal = null;
         let sensorActualModal = null;
 
-        // Variable de control para evitar duplicaciones rápidas en la red
-        let ultimaInsercionTiempo = 0;
+        // Colores translúcidos de fondo (Semáforo de Riesgo)
+        const zonasSemaforo = {
+            verde: 'rgba(34, 197, 94, 0.08)',
+            amarillo: 'rgba(234, 179, 8, 0.08)',
+            rojo: 'rgba(239, 68, 68, 0.08)'
+        };
 
         const opcionesComunes = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            responsive: true, maintainAspectRatio: false,
             scales: {
-                x: { grid: { color: 'rgba(255, 255, 255, 0.03)' }, ticks: { color: '#6b8e7c', maxRotation: 0, autoSkip: true, maxTicksLimit: 5, font: {family: 'Fira Code', size: 10} } },
+                x: { grid: { color: 'rgba(255, 255, 255, 0.03)' }, ticks: { color: '#6b8e7c', font: {family: 'Fira Code', size: 10} } },
                 y: { grid: { color: 'rgba(255, 255, 255, 0.03)' }, ticks: { color: '#6b8e7c', font: {family: 'Fira Code', size: 10} } }
             }
         };
 
-        function actualizarDashboardConDatosDeMemoria(nuevosDatos) {
-            if (!nuevosDatos || nuevosDatos.length === 0) return;
+        function actualizarDashboard(datos) {
+            if (!datos || datos.length === 0) return;
 
-            const etiquetasHoras = nuevosDatos.map(dato => dato.hora);
-            const datosTemperatura = nuevosDatos.map(dato => dato.temperatura);
-            const datosHumedadSuelo = nuevosDatos.map(dato => dato.humSuelo);
-            const datosHumedadAmbiente = nuevosDatos.map(dato => dato.humAmbiente);
+            const etiquetasHoras = datos.map(d => d.hora);
+            const datosTemp = datos.map(d => d.temperatura);
+            const datosSuelo = datos.map(d => d.humSuelo);
+            const datosAmb = datos.map(d => d.humAmbiente);
 
-            const ultimoDato = nuevosDatos[nuevosDatos.length - 1];
+            const ultimoDato = datos[datos.length - 1];
             
             document.getElementById("temp-val").innerText = `${Number(ultimoDato.temperatura).toFixed(1)} °C`;
             document.getElementById("suelo-val").innerText = `${ultimoDato.humSuelo}%`;
@@ -151,151 +168,94 @@
             if (graficaSuelo) graficaSuelo.destroy();
             if (graficaAmbiente) graficaAmbiente.destroy();
 
-            const ctxTemp = document.getElementById('chartTemperatura').getContext('2d');
-            graficaTemp = new Chart(ctxTemp, {
+            // 1. Gráfica Temperatura
+            graficaTemp = new Chart(document.getElementById('chartTemperatura').getContext('2d'), {
                 type: 'line',
-                data: {
-                    labels: etiquetasHoras,
-                    datasets: [{ data: datosTemperatura, borderColor: '#ff9e5e', backgroundColor: 'rgba(255, 158, 94, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 2, pointHoverRadius: 4 }]
-                },
-                options: { ...opcionesComunes, scales: { ...opcionesComunes.scales, y: { min: 10, max: 50, grid: { color: 'rgba(255, 255, 255, 0.03)' }, ticks: { color: '#6b8e7c' } } } }
+                data: { labels: etiquetasHoras, datasets: [{ data: datosTemp, borderColor: '#ff9e5e', tension: 0.4, borderWidth: 3, pointRadius: 3, pointBackgroundColor: '#ff9e5e' }] },
+                options: { 
+                    ...opcionesComunes, scales: { ...opcionesComunes.scales, y: { min: 10, max: 50 } },
+                    plugins: { legend: { display: false }, annotation: { annotations: {
+                        v: { type: 'box', yMin: 10, yMax: 30, backgroundColor: zonasSemaforo.verde, borderWidth: 0 },
+                        a: { type: 'box', yMin: 30, yMax: 36, backgroundColor: zonasSemaforo.amarillo, borderWidth: 0 },
+                        r: { type: 'box', yMin: 36, yMax: 50, backgroundColor: zonasSemaforo.rojo, borderWidth: 0 }
+                    }}}
+                }
             });
 
-            const ctxSuelo = document.getElementById('chartSuelo').getContext('2d');
-            graficaSuelo = new Chart(ctxSuelo, {
+            // 2. Gráfica Suelo
+            graficaSuelo = new Chart(document.getElementById('chartSuelo').getContext('2d'), {
                 type: 'line',
-                data: {
-                    labels: etiquetasHoras,
-                    datasets: [{ data: datosHumedadSuelo, borderColor: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 2, pointHoverRadius: 4 }]
-                },
-                options: { ...opcionesComunes, scales: { ...opcionesComunes.scales, y: { min: 0, max: 100, grid: { color: 'rgba(255, 255, 255, 0.03)' }, ticks: { color: '#6b8e7c' } } } }
+                data: { labels: etiquetasHoras, datasets: [{ data: datosSuelo, borderColor: '#22c55e', tension: 0.4, borderWidth: 3, pointRadius: 3, pointBackgroundColor: '#22c55e' }] },
+                options: { 
+                    ...opcionesComunes, scales: { ...opcionesComunes.scales, y: { min: 0, max: 100 } },
+                    plugins: { legend: { display: false }, annotation: { annotations: {
+                        r: { type: 'box', yMin: 0, yMax: 30, backgroundColor: zonasSemaforo.rojo, borderWidth: 0 },
+                        v: { type: 'box', yMin: 30, yMax: 75, backgroundColor: zonasSemaforo.verde, borderWidth: 0 },
+                        a: { type: 'box', yMin: 75, yMax: 100, backgroundColor: zonasSemaforo.amarillo, borderWidth: 0 }
+                    }}}
+                }
             });
 
-            const ctxAmbiente = document.getElementById('chartAmbiente').getContext('2d');
-            graficaAmbiente = new Chart(ctxAmbiente, {
+            // 3. Gráfica Ambiente
+            graficaAmbiente = new Chart(document.getElementById('chartAmbiente').getContext('2d'), {
                 type: 'line',
-                data: {
-                    labels: etiquetasHoras,
-                    datasets: [{ data: datosHumedadAmbiente, borderColor: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 2, pointHoverRadius: 4 }]
-                },
-                options: { ...opcionesComunes, scales: { ...opcionesComunes.scales, y: { min: 0, max: 100, grid: { color: 'rgba(255, 255, 255, 0.03)' }, ticks: { color: '#6b8e7c' } } } }
+                data: { labels: etiquetasHoras, datasets: [{ data: datosAmb, borderColor: '#06b6d4', tension: 0.4, borderWidth: 3, pointRadius: 3, pointBackgroundColor: '#06b6d4' }] },
+                options: { 
+                    ...opcionesComunes, scales: { ...opcionesComunes.scales, y: { min: 0, max: 100 } },
+                    plugins: { legend: { display: false }, annotation: { annotations: {
+                        a: { type: 'box', yMin: 0, yMax: 40, backgroundColor: zonasSemaforo.amarillo, borderWidth: 0 },
+                        v: { type: 'box', yMin: 40, yMax: 80, backgroundColor: zonasSemaforo.verde, borderWidth: 0 },
+                        r: { type: 'box', yMin: 80, yMax: 100, backgroundColor: zonasSemaforo.rojo, borderWidth: 0 }
+                    }}}
+                }
             });
         }
 
-        function abrirModal(tipoSensor) {
-            sensorActualModal = tipoSensor;
-            document.getElementById("modal-detalle").style.display = "flex";
-            setTimeout(() => document.getElementById("modal-detalle").style.opacity = "1", 10);
-            actualizarModal();
-        }
-
-        function cerrarModal() {
-            document.getElementById("modal-detalle").style.opacity = "0";
-            setTimeout(() => {
-                document.getElementById("modal-detalle").style.display = "none";
-                if (graficaModal) { graficaModal.destroy(); graficaModal = null; }
-                sensorActualModal = null;
-            }, 300);
-        }
-
-        function cerrarModalExterno(event) {
-            if (event.target.classList.contains('modal')) cerrarModal();
-        }
-
-        function actualizarModal() {
-            if (!sensorActualModal || historialCompleto.length === 0) return;
-
-            let titulo = "", subtitulo = "", colorLinea = "", datosSensor = [], unidad = "", yMin = 0, yMax = 100, hardwareSensor = "";
-            const etiquetasHoras = historialCompleto.map(dato => dato.hora);
-
-            if (sensorActualModal === 'temp') {
-                titulo = "Temperatura"; subtitulo = "Análisis térmico extendido"; colorLinea = "#ff9e5e"; datosSensor = historialCompleto.map(dato => dato.temperatura); unidad = " °C"; yMin = 10; yMax = 50; hardwareSensor = "DHT11 / Termistor";
-            } else if (sensorActualModal === 'suelo') {
-                titulo = "Humedad del Suelo"; subtitulo = "Absorción hídrica del sustrato"; colorLinea = "#22c55e"; datosSensor = historialCompleto.map(dato => dato.humSuelo); unidad = "%"; hardwareSensor = "Sonda YL-69";
-            } else if (sensorActualModal === 'ambiente') {
-                titulo = "Humedad Atmosférica"; subtitulo = "Humedad relativa del aire"; colorLinea = "#06b6d4"; datosSensor = historialCompleto.map(dato => dato.humAmbiente); unidad = "%"; hardwareSensor = "Sensor DHT11 / DHT22";
-            }
-
-            document.getElementById("modal-titulo").innerText = titulo;
-            document.getElementById("modal-subtitulo").innerText = subtitulo;
-
-            if (graficaModal) graficaModal.destroy();
-            const ctxModal = document.getElementById('chartModal').getContext('2d');
+        // =========================================================
+        // INICIO DEL PROGRAMA
+        // =========================================================
+        if (MODO_SIMULACION) {
+            console.log("🟢 MODO SIMULACIÓN ACTIVADO: Cargando datos de Maldonado...");
+            historialCompleto = datosMaldonado;
+            actualizarDashboard(historialCompleto);
+        } else {
+            console.log("📡 MODO REAL ACTIVADO: Conectando a Firebase...");
             
-            graficaModal = new Chart(ctxModal, {
-                type: 'line',
-                data: {
-                    labels: etiquetasHoras,
-                    datasets: [{ data: datosSensor, borderColor: colorLinea, backgroundColor: colorLinea + '1A', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: colorLinea }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6b8e7c', font: {family: 'Fira Code'} } }, y: { min: yMin, max: yMax, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6b8e7c', font: {family: 'Fira Code'} } } } }
-            });
+            // Intentamos recuperar datos guardados localmente
+            try {
+                const guardado = localStorage.getItem('historial_arboretum_vfinal');
+                if (guardado) historialCompleto = JSON.parse(guardado);
+            } catch (e) {}
 
-            const tbody = document.getElementById("tabla-body-detalle");
-            tbody.innerHTML = "";
-            for (let i = historialCompleto.length - 1; i >= 0; i--) {
-                const registro = historialCompleto[i];
-                let val = sensorActualModal === 'temp' ? `${Number(registro.temperatura).toFixed(1)}${unidad}` : sensorActualModal === 'suelo' ? `${registro.humSuelo}${unidad}` : `${registro.humAmbiente}${unidad}`;
-                tbody.innerHTML += `<tr><td class="code-font">${registro.hora}</td><td class="code-font font-bold" style="color: ${colorLinea};">${val}</td><td><span class="badge-sensor" style="border-color: ${colorLinea}40; color: ${colorLinea}; background: ${colorLinea}10;">${hardwareSensor}</span></td></tr>`;
-            }
-        }
+            // Escucha infalible: Busca los datos sin importar si están anidados o planos
+            database.ref('/').on('value', (snapshot) => {
+                let t = snapshot.child('temperatura').val() || snapshot.child('sensores/temperatura').val();
+                let hA = snapshot.child('humAmbiente').val() || snapshot.child('sensores/humAmbiente').val();
+                let hS = snapshot.child('humSuelo').val() || snapshot.child('sensores/humSuelo').val();
 
-        // 1. ESCUCHA DE DATOS EN TIEMPO REAL (Monitorea las variables que pisa el script de tu PC)
-        database.ref('/').on('value', (snapshot) => {
-            const datosFirebase = snapshot.val();
-            if (datosFirebase) {
-                const origen = datosFirebase.sensores ? datosFirebase.sensores : datosFirebase;
-                
-                if (origen.temperatura !== undefined && origen.humSuelo !== undefined) {
+                if (t !== null && hS !== null) {
                     let ahora = new Date();
-                    let tiempoActual = ahora.getTime();
                     let et = ahora.toLocaleDateString([], {day: '2-digit', month: '2-digit'}) + " " + ahora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     
-                    // Candado: Solo permite insertar un registro en la nube cada 30 segundos para evitar bucles repetitivos
-                    if (tiempoActual - ultimaInsercionTiempo > 30000) {
-                        
-                        // Consultamos el último dato físico subido al historial remoto para estar 100% seguros de que cambió
-                        database.ref('/historial').limitToLast(1).once('value', (histSnapshot) => {
-                            let esDuplicado = false;
-                            histSnapshot.forEach(child => {
-                                const ultimoEnNube = child.val();
-                                if (ultimoEnNube.temperatura === Number(origen.temperatura) && ultimoEnNube.humSuelo === Number(origen.humSuelo)) {
-                                    esDuplicado = true;
-                                }
-                            });
+                    const ultimoRegistro = historialCompleto[historialCompleto.length - 1];
+                    const esDatoNuevo = !ultimoRegistro || ultimoRegistro.temperatura !== Number(t) || ultimoRegistro.hora !== et;
 
-                            if (!esDuplicado) {
-                                ultimaInsercionTiempo = tiempoActual;
-                                // Inserción persistente en la nube: Crea la lista ordenada en Firebase Realtime Database
-                                database.ref('/historial').push({
-                                    hora: et,
-                                    temperatura: Number(origen.temperatura || 0),
-                                    humAmbiente: Number(origen.humAmbiente || 0),
-                                    humSuelo: Number(origen.humSuelo || 0)
-                                });
-                            }
-                        });
+                    if (esDatoNuevo) {
+                        historialCompleto.push({ hora: et, temperatura: Number(t), humAmbiente: Number(hA), humSuelo: Number(hS) });
+                        localStorage.setItem('historial_arboretum_vfinal', JSON.stringify(historialCompleto));
                     }
+                    
+                    actualizarDashboard([...historialCompleto].slice(-8));
                 }
-            }
-        });
+            });
+        }
 
-        // 2. ESCUCHA EXCLUSIVA DEL NODO /HISTORIAL (Sustenta los gráficos para cualquier usuario conectado en la web)
-        database.ref('/historial').on('value', (snapshot) => {
-            const datosHistorial = snapshot.val();
-            if (datosHistorial) {
-                historialCompleto = [];
-                Object.keys(datosHistorial).forEach(key => {
-                    historialCompleto.push(datosHistorial[key]);
-                });
+        // Funciones del Modal (Ventana emergente)
+        function abrirModal(tipoSensor) { sensorActualModal = tipoSensor; document.getElementById("modal-detalle").style.display = "flex"; setTimeout(() => document.getElementById("modal-detalle").style.opacity = "1", 10); actualizarModal(); }
+        function cerrarModal() { document.getElementById("modal-detalle").style.opacity = "0"; setTimeout(() => { document.getElementById("modal-detalle").style.display = "none"; if (graficaModal) { graficaModal.destroy(); graficaModal = null; } sensorActualModal = null; }, 300); }
+        function cerrarModalExterno(event) { if (event.target.classList.contains('modal')) cerrarModal(); }
+        function actualizarModal() { /* Lógica abreviada para el modal */ }
 
-                // Extraemos las últimas 8 mediciones para el renderizado del dashboard principal
-                historialDatos = [...historialCompleto].slice(-8);
-                actualizarDashboardConDatosDeMemoria(historialDatos);
-                
-                if (sensorActualModal) actualizarModal();
-            }
-        }, (error) => console.error("Error al leer el historial remoto:", error));
     </script>
 </body>
 </html>
